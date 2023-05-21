@@ -1,39 +1,36 @@
-name: Random Gif Action
+name: Random Coding Joke Action
 on:
   pull_request:
     types:
       - opened
 
 jobs:
-  generate_gif:
+  generate_joke:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Fetch random gif
-        id: gif
-        uses: actions/github-script@v4
-        with:
-          script: |
-            const axios = require('axios');
-            async function getRandomGif() {
-              const response = await axios.get('https://api.giphy.com/v1/gifs/random?api_key=YOUR_API_KEY');
-              return response.data.data.image_original_url;
-            }
-            const gifUrl = await getRandomGif();
-            core.setOutput('gif_url', gifUrl);
+      - name: Fetch random coding joke
+        id: joke
+        run: |
+          joke=$(curl -s https://official-joke-api.appspot.com/jokes/programming/random | jq -r '.[0].setup')
+          punchline=$(curl -s https://official-joke-api.appspot.com/jokes/programming/random | jq -r '.[0].punchline')
+          echo "::set-output name=joke::$joke"
+          echo "::set-output name=punchline::$punchline"
 
-      - name: Comment with random gif
+      - name: Comment with random coding joke
         uses: actions/github-script@v4
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const gifUrl = '${{ steps.gif.outputs.gif_url }}';
-            const comment = `Enjoy this random gif! ![GIF](${gifUrl})`;
+            const joke = '${{ steps.joke.outputs.joke }}';
+            const punchline = '${{ steps.joke.outputs.punchline }}';
+            const comment = `😄 Random Coding Joke 😄\n\n${joke}\n\n${punchline}`;
             github.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
               body: comment
             });
+
