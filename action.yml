@@ -1,0 +1,39 @@
+name: Random Gif Action
+on:
+  pull_request:
+    types:
+      - opened
+
+jobs:
+  generate_gif:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Fetch random gif
+        id: gif
+        uses: actions/github-script@v4
+        with:
+          script: |
+            const axios = require('axios');
+            async function getRandomGif() {
+              const response = await axios.get('https://api.giphy.com/v1/gifs/random?api_key=YOUR_API_KEY');
+              return response.data.data.image_original_url;
+            }
+            const gifUrl = await getRandomGif();
+            core.setOutput('gif_url', gifUrl);
+
+      - name: Comment with random gif
+        uses: actions/github-script@v4
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const gifUrl = '${{ steps.gif.outputs.gif_url }}';
+            const comment = `Enjoy this random gif! ![GIF](${gifUrl})`;
+            github.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
